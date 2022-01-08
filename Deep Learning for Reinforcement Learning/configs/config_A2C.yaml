@@ -1,0 +1,26 @@
+env: CartPole-v1        #LunarLander-v2                                 # environnement
+seed: 5
+featExtractor: !!python/name:__main__.NothingToDo ''
+freqSave: 5000
+freqTest: 10000
+nbTest: 1
+freqVerbose: 100000
+freqOptim: 1000                                                                          # Optimisation de la politique tous les freqOptim evenements
+fromFile: null
+nbEpisodes: 500000
+maxLengthTest: 500                                                                    # Longueur maxi des trajectoires en Test
+maxLengthTrain: 500                                                                   # Longueur maxi des trajectoires en Train
+
+
+gae: False
+roll_out: False
+
+discount: 0.99
+gae_lambda: 0.99
+rho: 0.99
+entropy_coef: 0.0001
+entropy: True
+
+lr_a: 0.001
+lr_c: 0.001
+

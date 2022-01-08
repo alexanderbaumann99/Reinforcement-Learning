@@ -1,0 +1,12 @@
+env: CartPole-v1
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 1
+freqSave: 1000
+freqTest: 10
+freqVerbose: 1000
+fromFile: null
+maxLengthTest: 1000
+maxLengthTrain: 500
+nbEpisodes: 1000  000
+nbTest: 1
+seed: 5

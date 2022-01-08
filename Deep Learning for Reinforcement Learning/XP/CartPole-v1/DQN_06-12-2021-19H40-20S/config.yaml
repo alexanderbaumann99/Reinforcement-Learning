@@ -1,0 +1,19 @@
+C: 100
+decay: 0.99999
+discount: 0.9
+env: CartPole-v1
+eps: 0.15
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 20
+freqSave: 1000
+freqTest: 100
+freqVerbose: 1000
+fromFile: null
+lr: 5e-3
+maxLengthTest: 500
+maxLengthTrain: 300
+mem_size: 10000
+mini_batch_size: 100
+nbEpisodes: 1000000
+nbTest: 1
+seed: 5

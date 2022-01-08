@@ -1,0 +1,29 @@
+env: CartPole-v1                                                  # environnement
+seed: 5
+featExtractor: !!python/name:__main__.NothingToDo ''
+freqSave: 1000
+freqTest: 100
+nbTest: 1
+freqVerbose: 1000
+freqOptim: 1000    # Optimisation de la politique tous les freqOptim evenements
+# freqOptimTrajectory: 10  # Optimisation de la politique tous les freqOptim trajectory
+fromFile: null
+nbEpisodes: 1000000
+maxLengthTrain: 500
+maxLengthTest: 500
+
+mem_size: 10000
+mini_batch_size: 100
+
+# epsilon greedy
+eps: 0.1
+decay: 0.99999
+
+# target network update step
+C: 10
+
+# gamma for temporal differential
+discount: 0.99
+
+# network learning rate
+lr: 1e-3

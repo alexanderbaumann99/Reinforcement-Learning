@@ -1,0 +1,21 @@
+K_epochs: 50
+batch_size: 100
+discount: 0.99
+env: LunarLanderContinuous-v2
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 200
+freqSave: 1000
+freqTest: 5000
+freqVerbose: 100000
+fromFile: null
+lr_a: 0.001
+lr_c: 0.001
+maxLengthTest: 500
+maxLengthTrain: 200
+mu: 0
+nbEpisodes: 1000
+nbTest: 1
+rho: 0.995
+seed: 5
+sigma: 0.2
+theta: 0.15

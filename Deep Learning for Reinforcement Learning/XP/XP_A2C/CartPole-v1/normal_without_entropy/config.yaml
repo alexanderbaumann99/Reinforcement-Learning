@@ -1,0 +1,24 @@
+env: CartPole-v1
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 1000
+freqSave: 5000
+freqTest: 10000
+freqVerbose: 100000
+fromFile: null
+maxLengthTest: 500
+maxLengthTrain: 500
+nbEpisodes: 500000
+nbTest: 1
+seed: 5
+
+gae: False
+roll_out: False
+
+discount: 0.99
+gae_lambda: 0.99
+rho: 0.99
+entropy_coef: 0.0001
+entropy: false
+
+lr_a: 0.001
+lr_c: 0.001

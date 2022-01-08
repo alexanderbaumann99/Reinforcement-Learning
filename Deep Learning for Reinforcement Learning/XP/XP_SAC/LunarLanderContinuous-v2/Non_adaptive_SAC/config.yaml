@@ -1,0 +1,24 @@
+K_epochs: 1
+adaptive: false
+alpha: 0.2
+batch_size: 128
+discount: 0.99
+env: LunarLanderContinuous-v2
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 1
+freqSave: 1000
+freqTest: 5000
+freqVerbose: 100000
+fromFile: null
+hidden_dim: 512
+lr_alpha: 0.001
+lr_c: 0.001
+lr_p: 0.001
+maxLengthTest: 500
+maxLengthTrain: 500
+nbEpisodes: 215
+nbTest: 1
+seed: 5
+startsteps: 1500
+target_entropy: 0.2
+tau: 0.99

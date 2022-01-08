@@ -1,0 +1,15 @@
+K_epochs: 5
+clip: false
+env: CartPole-v1
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 500
+freqSave: 1000
+freqTest: 500
+freqVerbose: 50000
+fromFile: null
+kl: true
+maxLengthTest: 500
+maxLengthTrain: 500
+nbEpisodes: 3011
+nbTest: 10
+seed: 5
