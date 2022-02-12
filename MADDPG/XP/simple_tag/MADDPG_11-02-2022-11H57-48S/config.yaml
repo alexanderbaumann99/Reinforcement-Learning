@@ -1,0 +1,65 @@
+action_size: 2
+activation: !!python/name:torch.nn.functional.leaky_relu ''
+agent_types:
+- 2
+- 2
+- 2
+- 2
+batchsize: 128
+capacity: 1000
+clipGradNormP: 0
+clipGradNormQ: 0
+commit: '504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/heads/main
+
+  aa66ecf22840abb5ca81f4891ad50d17bd38e61d refs/heads/master
+
+  504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/remotes/origin/HEAD
+
+  504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/remotes/origin/main
+
+  '
+device: 0
+env: simple_tag
+env_maker: !!python/name:__main__.make_env ''
+finalActivation: !!python/name:None.tanh ''
+freqOptim: 10
+freqSave: 1000
+freqTest: 100
+freqVerbose: 1
+fromFile: null
+gamma: 0.95
+import: 'import multiagent
+
+  '
+layers:
+- 128
+lr:
+- 0.001
+- 0.001
+- 0.001
+- 0.001
+lrq:
+- 0.01
+- 0.01
+- 0.01
+- 0.01
+maxLengthTest: 100
+maxLengthTrain: 25
+maxReward: 100
+nbEpisodes: 10000000
+nbSteps: 1
+nbTest: 1
+nb_subPolicies:
+- 3
+- 3
+- 3
+- 3
+noise: !!python/name:core.Orn_Uhlen ''
+polyakP: 0.9
+polyakQ: 0.9
+seed: 5
+sigma_noise: 0.2
+sigma_noiseTest: 0
+startEvents: 130
+wdp: 0
+wdq: 0

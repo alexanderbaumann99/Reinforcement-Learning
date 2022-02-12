@@ -1,0 +1,32 @@
+commit: '504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/heads/main
+
+  aa66ecf22840abb5ca81f4891ad50d17bd38e61d refs/heads/master
+
+  504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/remotes/origin/HEAD
+
+  504e3f64cb2971e82daf61e79fa589c8c62ef34a refs/remotes/origin/main
+
+  '
+device: 0
+discount: 0.99
+entropy: true
+entropy_coef: 0.001
+env: LunarLander-v2
+epoch_disc: 10
+epoch_ppo: 50
+eps_clip: 0.2
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 2000
+freqSave: 1000
+freqTest: 50000
+freqVerbose: 50000
+fromFile: null
+gae_lambda: 0.9
+lr_a: 0.0002
+lr_c: 0.0002
+lr_d: 0.0002
+maxLengthTest: 500
+maxLengthTrain: 300
+nbEpisodes: 30000
+nbTest: 10
+seed: 0

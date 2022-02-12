@@ -1,0 +1,24 @@
+K_epochs: 5
+beta: 1
+clip: true
+delta: 0.01
+discount: 0.999
+entropy: true
+entropy_coef: 0.0001
+env: LunarLander-v2
+eps_clip: 0.2
+featExtractor: !!python/name:core.NothingToDo ''
+freqOptim: 500
+freqSave: 1000
+freqTest: 50000
+freqVerbose: 50000
+fromFile: null
+gae_lambda: 0.99
+kl: false
+lr_a: 0.0002
+lr_c: 0.0002
+maxLengthTest: 500
+maxLengthTrain: 500
+nbEpisodes: 3000
+nbTest: 10
+seed: 5
