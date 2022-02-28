@@ -27,9 +27,10 @@ import pickle
 class GAIL(object):
   
 
-    def __init__(self, env, opt):
+    def __init__(self, env, opt,logger):
         self.opt=opt
         self.env=env
+        self.logger=logger
         if opt.fromFile is not None:
             self.load(opt.fromFile)
         self.action_space = env.action_space
@@ -45,6 +46,8 @@ class GAIL(object):
             nn.LeakyReLU(),
             nn.Linear(64,64),
             nn.LeakyReLU(),
+            nn.Linear(64,64),
+            nn.LeakyReLU(),
             nn.Linear(64,self.action_space.n),
             nn.Softmax(dim=-1)
         )
@@ -55,6 +58,7 @@ class GAIL(object):
             nn.LeakyReLU(),
             nn.Linear(64,1)
         )
+        self.critic_target=copy.deepcopy(self.critic)
         self.disc=nn.Sequential(
             nn.Linear(self.ob_dim+self.action_space.n,64),
             nn.LeakyReLU(),
@@ -66,6 +70,7 @@ class GAIL(object):
         
         self.actor.to(self.device)
         self.critic.to(self.device)
+        self.critic_target.to(self.device)
         self.disc.to(self.device)
 
         self.lr_a=opt.lr_a
@@ -94,7 +99,8 @@ class GAIL(object):
         self.new_states=[]
         self.values=[]
 
-        self.opt_count=0
+        self.ppo_count=0
+        self.disc_count=0
         self.traj=0
        
         self.loadExp("expert.pkl")
@@ -133,20 +139,19 @@ class GAIL(object):
 
 
     def act(self, obs):
-
         with torch.no_grad():
-            prob=self.actor(torch.FloatTensor(obs).to(self.device))
-            dist=Categorical(prob)
-            
-            action=dist.sample()
-       
-            if not self.test:
-
+            if self.test:
+                prob=self.actor(torch.FloatTensor(obs).to(self.device))
+                action = torch.argmax(prob, dim = -1)
+            else:
+                prob=self.actor(torch.FloatTensor(obs).to(self.device))
+                dist=Categorical(prob)
+                action=dist.sample()
+        
                 self.log_probs.append(dist.log_prob(action))
                 self.actions.append(action)
                 self.states.append(torch.FloatTensor(obs).to(self.device))
-                self.values.append(self.critic(torch.FloatTensor(obs).to(self.device)))
-       
+                       
 
         return action.item()
 
@@ -158,92 +163,79 @@ class GAIL(object):
         actions_hot=F.one_hot(actions,num_classes=self.action_space.n)
         state_act_pair=torch.cat((old_states,actions_hot),1)
         old_logprobs = torch.squeeze(torch.stack(self.log_probs, dim=0)).to(self.device)
-        new_states = torch.squeeze(torch.stack(self.new_states, dim=0)).to(self.device)
         dones = torch.Tensor(self.dones).to(self.device)
-        
+        rewards = torch.Tensor(self.rewards).to(self.device)
 
         with torch.no_grad():
-            
-            rewards=torch.log(torch.clamp(self.disc(state_act_pair),0.05,0.95)).view(-1)
-            """ target_v=torch.zeros(rewards.shape[0]).to(self.device)
-            disc=0
-            for t in reversed(range(rewards.shape[0])):
-                if dones[t]:
-                    disc=0
-                disc=rewards[t]+self.discount*disc
-                target_v[t]=disc
-            target_v = (target_v - target_v.mean()) / (target_v.std() + 1e-10) """
-
-            old_values=self.critic(old_states).view(-1)
-            new_values=self.critic(new_states).view(-1)
-            delta=rewards+self.discount*new_values*(1-dones)-old_values
-            advantage1 = copy.deepcopy(delta)
-            advantage=advantage1
-            n=1
-            for t in reversed(range(advantage.shape[0]-1)):
-                #dones ??
-                if dones[t]:
-                    n=1
-                else:
-                    n+=1
-                advantage1[t]=advantage1[t+1]*self.gae_lambda*self.discount*(1-dones[t])+delta[t]
-                advantage[t]=advantage1[t]/n
-
-            target_v=advantage+old_values
-            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-10)
-        
-         
+            rewards=torch.clamp(torch.log(self.disc(state_act_pair)),-100,0).view(-1)
+            disc_ret=torch.empty_like(rewards)
+            disc_ret[-1]=rewards[-1]
+            for t in reversed(range(disc_ret.shape[0]-1)):
+                disc_ret[t]=rewards[t]+disc_ret[t+1]*(1-dones[t])*self.discount
+               
+            disc_ret = (disc_ret - disc_ret.mean()) / disc_ret.std()
+            values = self.critic(old_states)
+            advantage = disc_ret - values
+            advantage = (advantage - advantage.mean()) / advantage.std()
+                     
         for _ in range(self.epoch_ppo):
-            self.optimizer_actor.zero_grad()
             probs = self.actor(old_states)
-            dist=Categorical(probs)
+            dist=Categorical(probs=probs)
             log_probs=dist.log_prob(actions)
             ratios=torch.exp(log_probs-old_logprobs)
 
             loss1=ratios*advantage
             loss2=torch.clamp(ratios,min=1-self.eps_clip,max=1+self.eps_clip)*advantage
-
             actor_loss= -torch.mean(torch.min(loss1,loss2))
             if self.entropy:
                 entropy=torch.mean(dist.entropy())
                 actor_loss-=self.ent_coef*entropy
             
-            actor_loss.backward(retain_graph=False)
-            nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+            self.optimizer_actor.zero_grad()
+            actor_loss.backward()
             self.optimizer_actor.step()
             self.actor_loss=actor_loss
+            self.ppo_count+=1
+            self.logger.direct_write("loss/actor", agent.actor_loss, agent.ppo_count)
 
-            self.optimizer_critic.zero_grad()
             values=self.critic(old_states).view(-1)
-            loss=F.mse_loss(values,target_v)
-            loss.backward(retain_graph=False)
-            nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
+            loss=F.smooth_l1_loss(values,disc_ret)
+            self.optimizer_critic.zero_grad()
+            loss.backward()
             self.optimizer_critic.step()
             self.critic_loss=loss
+            logger.direct_write("loss/critic", agent.critic_loss, agent.ppo_count)
+                    
+            
         
         for _ in range(self.epoch_disc):
-            self.optimizer_disc.zero_grad()
             exp_pred=self.disc(self.exp_pairs)
-            act_pred=self.disc(state_act_pair)
-            loss_exp=torch.log(1-torch.clamp(exp_pred,0.05,0.95)).view(-1).mean(-1)
-            loss_agent=torch.log(torch.clamp(act_pred,0.05,0.95)).view(-1).mean(-1)
-            loss_disc=loss_exp+loss_agent
+            noisy_pairs=state_act_pair+torch.randn_like(state_act_pair)*10e-1
+            act_pred=self.disc(noisy_pairs)
+
+            learner_loss = F.binary_cross_entropy(act_pred, torch.zeros_like(act_pred))
+            expert_loss = F.binary_cross_entropy(exp_pred, torch.ones_like(exp_pred))
+
+            loss_disc = learner_loss + expert_loss
+            self.optimizer_disc.zero_grad()
             loss_disc.backward()
             self.optimizer_disc.step()
             self.exp_pred=exp_pred.mean()
             self.act_pred=act_pred.mean()
+            self.disc_loss=loss_disc.item()
 
-        self.opt_count+=1
+            self.disc_count+=1
+
+            self.logger.direct_write("disc/expert", agent.exp_pred, agent.disc_count)
+            self.logger.direct_write("disc/actor", agent.act_pred, agent.disc_count) 
+            self.logger.direct_write("disc/loss", agent.disc_loss, agent.disc_count)
+
         self.states=[]
         self.actions=[]
         self.log_probs=[]
         self.rewards=[]
         self.dones=[]
-        self.new_states=[]
-        self.values=[]
-
-    
-                     
+                 
 
     # enregistrement de la transition pour exploitation par learn ulterieure
     def store(self,ob, action, new_obs, reward, done, it):
@@ -254,28 +246,20 @@ class GAIL(object):
             if it == self.opt.maxLengthTrain:
                 print("undone")
                 done=False
-           
-            self.rewards.append(reward)
+
             self.dones.append(done)
-            self.new_states.append(torch.FloatTensor(new_obs).to(self.device))
+   
             
 
     # retoune vrai si c'est le moment d'entraîner l'agent.
     # Dans cette version retourne vrai tous les freqoptim evenements
     # Mais on pourrait retourner vrai seulement si done pour s'entraîner seulement en fin d'episode
-    def timeToLearn(self,done):
+    def timeToLearn(self):
         if self.test:
             return False
 
-        if done:
-            self.traj+=1
         self.nbEvents+=1
-        """ if self.traj>=5:
-            self.traj=0
-            return True
-        else: 
-            return False """
-        
+                
         return self.nbEvents%self.opt.freqOptim == 0
 
 if __name__ == '__main__':
@@ -288,8 +272,8 @@ if __name__ == '__main__':
     np.random.seed(config["seed"])
     episode_count = config["nbEpisodes"]
 
-    agent = GAIL(env,config)
-    agent.load("./XP/LunarLander-v2/GAIL/save_9000")
+    agent = GAIL(env,config,logger)
+    
     rsum = 0
     mean = 0
     verbose = True
@@ -298,8 +282,7 @@ if __name__ == '__main__':
     done = False
     t=time.time()
     for i in range(episode_count):
-        checkConfUpdate(outdir, config)
-
+       
         rsum = 0
         ob = env.reset()
 
@@ -340,36 +323,28 @@ if __name__ == '__main__':
             
             action= agent.act(ob)
             new_obs, reward, done, _ = env.step(action)
-           
+            rsum += reward           
             new_obs = agent.featureExtractor.getFeatures(new_obs)
             agent.store(ob, action, new_obs, reward, done,j)
-            
+        
             j+=1
 
             # Si on a atteint la longueur max définie dans le fichier de config
-            if ((config["maxLengthTrain"] > 0) and (not agent.test) and (j == config["maxLengthTrain"])) or ( (agent.test) and (config["maxLengthTest"] > 0) and (j == config["maxLengthTest"])):
+            if (not agent.test and j == config["maxLengthTrain"]) or (agent.test and j == config["maxLengthTest"]):
                 done = True
                 print("forced done!")
-
             
-            rsum += reward
-
-            if agent.timeToLearn(done):
+            if agent.timeToLearn():
                 agent.learn()
-                logger.direct_write("loss/actor", agent.actor_loss, agent.opt_count)
-                logger.direct_write("loss/critic", agent.critic_loss, agent.opt_count)
-                logger.direct_write("disc/expert", agent.exp_pred, agent.opt_count)
-                logger.direct_write("disc/actor", agent.act_pred, agent.opt_count)
-
-
+                    
+            
             if done:
-                print("EPISODE %d\t reward=%.3f\t %d actions" %(i,rsum,j))
+                print("EPISODE %d\t reward=%.2f\t %d actions" %(i,rsum,j))
                 logger.direct_write("reward/Train", rsum, i)
                 mean += rsum
                 rsum = 0
 
                 break
 
-                       
-      
+            
     env.close()

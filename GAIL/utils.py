@@ -186,6 +186,6 @@ def init(config_file, algoName):
     save_src(os.path.abspath(outdir))
     write_yaml(os.path.join(outdir, 'config.yaml'), config)
     logger = LogMe(SummaryWriter(outdir))
-    loadTensorBoard("./XP/" + config["env"])
+    loadTensorBoard(outdir)
 
     return env, config, outdir, logger
