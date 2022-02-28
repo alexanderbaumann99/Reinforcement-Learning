@@ -1,15 +1,20 @@
 Target_Update: 500
+alpha: 3
+beta: 0.9
 decay: 1.0
 discount: 0.99
+distance_goals: 0.1
 env: gridworld-v0
 eps: 0.2
-execute: 'env.setPlan(config["map"], config["rewards"])'
+execute: env.setPlan(config["map"], config["rewards"])
 featExtractor: !!python/name:core.MapFromDumpExtractor4 ''
+freqBuffer: 10
 freqOptim: 10
 freqSave: 1000
 freqTest: 1000
 freqVerbose: 1000000
 fromFile: null
+length_goal_mem: 10
 lr: 0.001
 map: gridworldPlans&Goals/plan3.txt
 maxLengthTest: 100
@@ -19,12 +24,6 @@ mini_batch_size: 1000
 nbEpisodes: 10101
 nbOptim: 100
 nbTest: 100
-freqBuffer: 10
-alpha: 3
-beta: 0.9
-length_goal_mem: 10
-distance_goals: 0.1
-
 rewards:
   0: -0.001
   3: 1
@@ -32,4 +31,3 @@ rewards:
   5: -1
   6: -1
 seed: 5
-

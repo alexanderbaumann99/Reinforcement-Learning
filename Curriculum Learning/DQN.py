@@ -149,14 +149,13 @@ if __name__ == '__main__':
     # Configuration
 
     env, config, outdir, logger = init('./config_curriculum.yaml', "DQN")
-
     freqTest = config["freqTest"]
     freqSave = config["freqSave"]
     nbTest = config["nbTest"]
     env.seed(config["seed"])
     np.random.seed(config["seed"])
     episode_count = config["nbEpisodes"]
-
+ 
     # Agent
     agent = DQN(env, config)
     rsum = 0
@@ -177,7 +176,7 @@ if __name__ == '__main__':
             verbose = True
         else:
             verbose = False
-        verbose=False
+        verbose=True
 
         # C'est le moment de tester l'agent
         if i % freqTest == 0:  ##### Same as train for now

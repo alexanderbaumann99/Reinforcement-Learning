@@ -251,9 +251,12 @@ class GridworldEnv(discrete.DiscreteEnv):
         plt.clf()
         plt.imshow(img)
         fig.canvas.draw()
+        pause=0.00001
         if pause>0:
             plt.pause(pause)
         return img
+    
+
 
     def _close_env(self):
         plt.close(self.this_fig_num)
@@ -325,4 +328,18 @@ class GridworldEnv(discrete.DiscreteEnv):
 
         l=np.arange(0,len(self.goals))
         i=np.random.choice(l,1)[0]
+
+        """ for k in self.goals:
+            plt.figure()
+            img=self._gridmap_to_img(k)
+            plt.clf()
+            plt.imshow(img)
+            plt.show() """
+       
         return self.goals[i],self._gridmap_to_img(self.goals[i])
+
+    
+
+        
+
+    

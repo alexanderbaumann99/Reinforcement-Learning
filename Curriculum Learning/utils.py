@@ -143,7 +143,7 @@ def logRun(name, config, agent_object):
     config["commit"] = subprocess.check_output(['git', 'show-ref']).decode('utf-8')
     write_yaml(os.path.join(outdir, 'config.yaml'), config)
     logger = LogMe(SummaryWriter(outdir))
-    loadTensorBoard("./XP/" + config["env"])
+    loadTensorBoard(outdir)
     logConfig(logger, config)
     return logger, outdir
 
@@ -166,6 +166,6 @@ def init(config_file, algoName):
     save_src(os.path.abspath(outdir))
     write_yaml(os.path.join(outdir, 'config.yaml'), config)
     logger = LogMe(SummaryWriter(outdir))
-    # loadTensorBoard(outdir)
+    loadTensorBoard(outdir)
 
     return env, config, outdir, logger
